@@ -3,10 +3,10 @@ import { redirect } from "next/navigation";
 import { Landmark, LineChart, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
 import { loginAction, getViewer } from "@/lib/session";
 import { AuthAlternativeMethods } from "@/components/auth-alternative-methods";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export default async function LoginPage({
   searchParams,
@@ -85,9 +85,9 @@ export default async function LoginPage({
                 <Input id="password" name="password" type="password" placeholder="••••••••" required />
               </div>
               {searchParams?.error ? <p className="text-sm text-destructive">{decodeURIComponent(searchParams.error)}</p> : null}
-              <Button className="w-full" type="submit">
+              <SubmitButton className="w-full" loadingText="Signing in...">
                 Sign in
-              </Button>
+              </SubmitButton>
             </form>
             <AuthAlternativeMethods />
 

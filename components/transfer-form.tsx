@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, CheckCircle2 } from "lucide-react";
+import { ArrowRightLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { type Account } from "@/lib/types";
 import { formatAccountType, formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/toast-provider";
 
 export function TransferForm({ accounts }: { accounts: Account[] }) {
   const router = useRouter();
@@ -19,6 +20,8 @@ export function TransferForm({ accounts }: { accounts: Account[] }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   async function readJson<T>(response: Response): Promise<T | null> {
     const contentType = response.headers.get("content-type") ?? "";
@@ -39,29 +42,41 @@ export function TransferForm({ accounts }: { accounts: Account[] }) {
   async function handleTransfer() {
     setMessage("");
     setError("");
+    setIsLoading(true);
 
     const parsedAmount = Number(amount);
 
     if (!fromAccount || !toAccount || fromAccount === toAccount || !parsedAmount || parsedAmount <= 0) {
-      setError("Choose two different accounts and enter a valid amount.");
+      const errorMessage = "Choose two different accounts and enter a valid amount.";
+      setError(errorMessage);
+      toast({ title: errorMessage, variant: "error" });
+      setIsLoading(false);
       return;
     }
 
-    const response = await fetch("/api/transfer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fromAccount, toAccount, amount: parsedAmount }),
-    });
+    try {
+      const response = await fetch("/api/transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromAccount, toAccount, amount: parsedAmount }),
+      });
 
-    const payload = await readJson<{ error?: string; message?: string }>(response);
+      const payload = await readJson<{ error?: string; message?: string }>(response);
 
-    if (!response.ok) {
-      setError(payload?.error ?? "Transfer failed.");
-      return;
+      if (!response.ok) {
+        const errorMessage = payload?.error ?? "Transfer failed.";
+        setError(errorMessage);
+        toast({ title: errorMessage, variant: "error" });
+        return;
+      }
+
+      const successMessage = payload?.message ?? "Transfer completed successfully.";
+      setMessage(successMessage);
+      toast({ title: successMessage, variant: "success" });
+      startTransition(() => router.refresh());
+    } finally {
+      setIsLoading(false);
     }
-
-    setMessage(payload?.message ?? "Transfer completed successfully.");
-    startTransition(() => router.refresh());
   }
 
   return (
@@ -109,9 +124,14 @@ export function TransferForm({ accounts }: { accounts: Account[] }) {
             <Input id="amount" type="number" min="1" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} />
           </div>
 
-          <Button type="button" className="w-full" onClick={() => startTransition(() => void handleTransfer())} disabled={isPending}>
-            <ArrowRightLeft className="h-4 w-4" />
-            Confirm transfer
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => void handleTransfer()}
+            disabled={isPending || isLoading}
+          >
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
+            {isLoading ? "Processing..." : "Confirm transfer"}
           </Button>
 
           {message ? (

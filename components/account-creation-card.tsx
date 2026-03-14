@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ShieldCheck, Sparkles, Wallet } from "lucide-react";
+import { Loader2, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type AccountType } from "@/lib/types";
+import { useToast } from "@/components/toast-provider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,8 @@ export function AccountCreationCard({ accountsCount }: { accountsCount: number }
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   async function readJson<T>(response: Response): Promise<T | null> {
     const contentType = response.headers.get("content-type") ?? "";
@@ -40,32 +43,43 @@ export function AccountCreationCard({ accountsCount }: { accountsCount: number }
   async function handleCreate() {
     setError("");
     setMessage("");
+    setIsLoading(true);
 
     const trimmedBalance = balance.trim();
     const parsedBalance = Number(trimmedBalance || 0);
 
     if (Number.isNaN(parsedBalance) || parsedBalance < 0) {
-      setError("Enter a valid opening balance (zero is fine)." );
+      setError("Enter a valid opening balance (zero is fine).");
+      toast({ title: "Enter a valid opening balance.", variant: "error" });
+      setIsLoading(false);
       return;
     }
 
-    const response = await fetch("/api/accounts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ accountType, balance: parsedBalance }),
-    });
+    try {
+      const response = await fetch("/api/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountType, balance: parsedBalance }),
+      });
 
-    const payload = await readJson<{ error?: string }>(response);
+      const payload = await readJson<{ error?: string }>(response);
 
-    if (!response.ok) {
-      setError(payload?.error ?? "Unable to create account.");
-      return;
+      if (!response.ok) {
+        const errorMessage = payload?.error ?? "Unable to create account.";
+        setError(errorMessage);
+        toast({ title: errorMessage, variant: "error" });
+        return;
+      }
+
+      const successMessage = `${ACCOUNT_TYPES.find((type) => type.value === accountType)?.label ?? "Account"} created.`;
+      setMessage(successMessage);
+      toast({ title: successMessage, variant: "success" });
+      setBalance("0.00");
+
+      startTransition(() => router.refresh());
+    } finally {
+      setIsLoading(false);
     }
-
-    setMessage(`${ACCOUNT_TYPES.find((type) => type.value === accountType)?.label ?? "Account"} created.`);
-    setBalance("0.00");
-
-    startTransition(() => router.refresh());
   }
 
   return (
@@ -115,9 +129,14 @@ export function AccountCreationCard({ accountsCount }: { accountsCount: number }
             <p className="text-xs text-muted-foreground">Tip: add a minimum of $5 to keep transfers unlocked.</p>
           </div>
         </div>
-        <Button className="w-full" type="button" onClick={() => startTransition(() => void handleCreate())} disabled={isPending}>
-          <Wallet className="mr-2 h-4 w-4" />
-          Create account
+        <Button
+          className="w-full"
+          type="button"
+          onClick={() => void handleCreate()}
+          disabled={isPending || isLoading}
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+          {isLoading ? "Creating..." : "Create account"}
         </Button>
         {message ? (
           <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-2 text-sm text-emerald-400">

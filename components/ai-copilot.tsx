@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { Bot, RefreshCcw, TrendingUp } from "lucide-react";
+import { Bot, Loader2, RefreshCcw, TrendingUp } from "lucide-react";
 import { type Account, type FinancialInsight, type Transaction } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -83,8 +83,8 @@ export function AiCopilot({ accounts, transactions, initialInsight = null }: AiC
             onClick={() => startTransition(() => void loadInsight())}
             disabled={isPending}
           >
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+            {isPending ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
       </CardHeader>
