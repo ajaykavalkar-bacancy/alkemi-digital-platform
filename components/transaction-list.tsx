@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 import { type Transaction } from "@/lib/types";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/components/toast-provider";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -22,6 +23,7 @@ export function TransactionList({ transactions, compact = false }: TransactionLi
   const [dateWindow, setDateWindow] = useState(compact ? "all" : "30");
   const [page, setPage] = useState(1);
   const pageSize = compact ? 6 : 8;
+  const { toast } = useToast();
 
   const categories = useMemo(
     () => ["all", ...Array.from(new Set(transactions.map((transaction) => transaction.category)))],
@@ -50,15 +52,75 @@ export function TransactionList({ transactions, compact = false }: TransactionLi
 
   const pageItems = filteredTransactions.slice((page - 1) * pageSize, page * pageSize);
 
+  const toCsvValue = (value: string | number | null | undefined) => {
+    const raw = value === null || value === undefined ? "" : String(value);
+    if (raw.includes('"') || raw.includes(",") || raw.includes("\n")) {
+      return `"${raw.replace(/"/g, '""')}"`;
+    }
+    return raw;
+  };
+
+  const downloadAll = () => {
+    if (!transactions.length) {
+      toast({ title: "No transactions to download.", variant: "info" });
+      return;
+    }
+
+    const header = [
+      "id",
+      "account_id",
+      "account_type",
+      "type",
+      "description",
+      "category",
+      "amount",
+      "created_at",
+    ];
+    const rows = transactions.map((transaction) => [
+      transaction.id,
+      transaction.account_id,
+      transaction.account_type ?? "",
+      transaction.type,
+      transaction.description,
+      transaction.category,
+      transaction.amount,
+      transaction.created_at,
+    ]);
+
+    const csv = [header, ...rows]
+      .map((row) => row.map((value) => toCsvValue(value)).join(","))
+      .join("\n");
+
+    const fileStamp = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `moneymind-transactions-${fileStamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast({ title: "Transaction CSV download started.", variant: "success" });
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{compact ? "Recent transactions" : "Transaction history"}</CardTitle>
-        <CardDescription>
-          {compact
-            ? "Latest debits and credits across linked accounts."
-            : "Search, filter, and paginate historical account activity."}
-        </CardDescription>
+      <CardHeader className={compact ? undefined : "gap-4 lg:flex-row lg:items-center lg:justify-between"}>
+        <div>
+          <CardTitle>{compact ? "Recent transactions" : "Transaction history"}</CardTitle>
+          <CardDescription>
+            {compact
+              ? "Latest debits and credits across linked accounts."
+              : "Search, filter, and paginate historical account activity."}
+          </CardDescription>
+        </div>
+        {!compact ? (
+          <Button variant="outline" className="w-full lg:w-auto" onClick={downloadAll}>
+            <Download className="h-4 w-4" />
+            Download CSV
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
         {!compact ? (
