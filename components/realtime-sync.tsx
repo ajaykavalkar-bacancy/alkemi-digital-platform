@@ -16,7 +16,6 @@ const USER_TABLES = [
   "transfers",
   "cards",
   "notifications",
-  "ai_insights",
 ] as const;
 
 export function RealtimeSync({ viewerId, role }: RealtimeSyncProps) {
