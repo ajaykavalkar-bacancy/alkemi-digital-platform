@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const ACCOUNT_TYPES: { value: AccountType; label: string; description: string }[] = [
+const ACCOUNT_TYPES: { value: AccountType; label: string; description: string }[] = [ 
   { value: "checking", label: "Checking account", description: "Everyday spending and incoming deposits." },
   { value: "savings", label: "Savings account", description: "Store funds for goals and earn interest." },
   { value: "credit", label: "Credit account", description: "Track your line of credit or virtual card." },
