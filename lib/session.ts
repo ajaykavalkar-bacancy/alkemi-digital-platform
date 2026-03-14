@@ -33,6 +33,16 @@ export async function getViewer(): Promise<Viewer | null> {
   };
 }
 
+function isNextRedirect(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    (error as { digest: string }).digest.startsWith("NEXT_REDIRECT")
+  );
+}
+
 export async function requireViewer() {
   const viewer = await getViewer();
 
@@ -68,8 +78,13 @@ export async function loginAction(formData: FormData) {
     if (error) {
       redirect(`/login?error=${encodeURIComponent(error.message)}`);
     }
-  } catch {
-    redirect("/login?error=Authentication%20failed.%20Check%20Supabase%20configuration.");
+  } catch (error) {
+    if (isNextRedirect(error)) {
+      throw error;
+    }
+    console.error("loginAction failed", error);
+    const message = error instanceof Error ? error.message : "Authentication failed. Check Supabase configuration.";
+    redirect(`/login?error=${encodeURIComponent(message)}`);
   }
 
   redirect("/dashboard");
@@ -101,8 +116,14 @@ export async function signupAction(formData: FormData) {
 
     data = result.data;
     error = result.error;
-  } catch {
-    redirect("/signup?error=Sign%20up%20failed.%20Check%20Supabase%20configuration.");
+  } catch (caughtError) {
+    if (isNextRedirect(caughtError)) {
+      throw caughtError;
+    }
+    console.error("signupAction failed", caughtError);
+    const message =
+      caughtError instanceof Error ? caughtError.message : "Sign up failed. Check Supabase configuration.";
+    redirect(`/signup?error=${encodeURIComponent(message)}`);
   }
 
   if (error) {

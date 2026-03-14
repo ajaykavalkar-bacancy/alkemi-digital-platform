@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export default async function AdminPage() {
   const viewer = await requireAdmin();
-  const snapshot = await getAdminSnapshot(viewer);
+  const snapshot = await getAdminSnapshot();
   const averageTransaction =
     snapshot.transactions.length > 0 ? snapshot.totalVolume / snapshot.transactions.length : 0;
   const flaggedCount = snapshot.transactions

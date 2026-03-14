@@ -2,65 +2,15 @@ create extension if not exists pgcrypto;
 
 do $$
 declare
-  seed_user_id uuid := '11111111-1111-1111-1111-111111111111';
-  checking_account_id uuid := 'a1111111-1111-1111-1111-111111111111';
-  savings_account_id uuid := 'a2222222-2222-2222-2222-222222222222';
-  identity_id uuid := '21111111-1111-1111-1111-111111111111';
+  -- Replace with an existing auth.users.id from Supabase Auth (create via Dashboard UI).
+  seed_user_id uuid := 'b8fd9553-ecd7-4e2a-ac38-0f92d00b7dc6';
+  checking_account_id uuid := 'b8fd9553-ecd7-4e2a-ac38-0f92d00b7dc7';
+  savings_account_id uuid := 'b8fd9553-ecd7-4e2a-ac38-0f92d00b7dc8';
 begin
-  insert into auth.users (
-    instance_id,
-    id,
-    aud,
-    role,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    created_at,
-    updated_at
-  )
-  values (
-    '00000000-0000-0000-0000-000000000000',
-    seed_user_id,
-    'authenticated',
-    'authenticated',
-    'seed@moneymind.com',
-    crypt('password123', gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}',
-    '{"full_name":"Avery Johnson"}',
-    now(),
-    now()
-  )
-  on conflict (id) do nothing;
-
-  insert into auth.identities (
-    id,
-    user_id,
-    identity_data,
-    provider,
-    provider_id,
-    last_sign_in_at,
-    created_at,
-    updated_at
-  )
-  values (
-    identity_id,
-    seed_user_id,
-    format('{"sub":"%s","email":"%s"}', seed_user_id, 'seed@moneymind.com')::jsonb,
-    'email',
-    'seed@moneymind.com',
-    now(),
-    now(),
-    now()
-  )
-  on conflict (id) do nothing;
-
   insert into public.users (id, email, full_name, role, created_at)
   values (
     seed_user_id,
-    'seed@moneymind.com',
+    'newuser@moneymind.com',
     'Avery Johnson',
     'admin',
     '2026-01-15T10:00:00.000Z'

@@ -126,7 +126,7 @@ export async function getNotifications(viewer: Viewer) {
   return (await getDashboardSnapshot(viewer)).notifications;
 }
 
-export async function getAdminSnapshot(viewer: Viewer): Promise<AdminSnapshot> {
+export async function getAdminSnapshot(): Promise<AdminSnapshot> {
   const supabase = createSupabaseServerClient();
 
   if (!supabase) {
