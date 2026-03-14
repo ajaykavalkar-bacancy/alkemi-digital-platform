@@ -17,7 +17,13 @@ const ACCOUNT_TYPES: { value: AccountType; label: string; description: string }[
   { value: "credit", label: "Credit account", description: "Track your line of credit or virtual card." },
 ];
 
-export function AccountCreationCard({ accountsCount }: { accountsCount: number }) {
+export function AccountCreationCard({
+  accountsCount,
+  onCreated,
+}: {
+  accountsCount: number;
+  onCreated?: () => void;
+}) {
   const router = useRouter();
   const [accountType, setAccountType] = useState<AccountType>(ACCOUNT_TYPES[0].value);
   const [balance, setBalance] = useState("0.00");
@@ -77,6 +83,7 @@ export function AccountCreationCard({ accountsCount }: { accountsCount: number }
       setBalance("0.00");
 
       startTransition(() => router.refresh());
+      onCreated?.();
     } finally {
       setIsLoading(false);
     }
