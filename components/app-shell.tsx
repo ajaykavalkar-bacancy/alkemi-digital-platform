@@ -3,6 +3,7 @@ import { type Viewer } from "@/lib/types";
 import { Navbar } from "@/components/navbar";
 import { RealtimeSync } from "@/components/realtime-sync";
 import { Sidebar } from "@/components/sidebar";
+import { ToastFromQuery } from "@/components/toast-from-query";
 
 interface AppShellProps {
   title: string;
@@ -18,6 +19,7 @@ export function AppShell({ title, description, viewer, children }: AppShellProps
     <Sidebar viewer={viewer} />
     <div className="flex-1 space-y-6">
       <RealtimeSync viewerId={viewer.id} role={viewer.role} />
+      <ToastFromQuery />
       <Navbar title={title} description={description} viewer={viewer} />
       <main className="reveal-in reveal-stagger-1">{children}</main>
     </div>

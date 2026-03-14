@@ -137,6 +137,11 @@ body::before {
     box-shadow: 0 26px 48px -30px rgba(10, 30, 38, 0.44);
   }
 
+  .card-polish.card-static:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
   .dark body {
     background-image:
       radial-gradient(circle at 15% 10%, rgba(45, 183, 163, 0.16), transparent 35%),

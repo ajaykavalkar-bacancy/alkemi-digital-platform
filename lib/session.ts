@@ -87,7 +87,7 @@ export async function loginAction(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(message)}`);
   }
 
-  redirect("/dashboard");
+  redirect("/dashboard?toast=Welcome%20back&toastType=success");
 }
 
 export async function signupAction(formData: FormData) {
@@ -139,7 +139,7 @@ export async function signupAction(formData: FormData) {
     });
   }
 
-  redirect("/dashboard");
+  redirect("/dashboard?toast=Account%20created&toastType=success");
 }
 
 export async function signOutAction() {
