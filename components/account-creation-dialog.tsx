@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowRightLeft, Sparkles, Wallet } from "lucide-react";
+import { Sparkles, Wallet } from "lucide-react";
 import { AccountCreationCard } from "@/components/account-creation-card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
