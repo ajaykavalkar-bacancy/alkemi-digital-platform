@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Github, Globe, Mail, Sparkles } from "lucide-react";
+import { Github, Globe, Loader2, Mail, Sparkles } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabaseClient";
+import { useToast } from "@/components/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -12,6 +13,7 @@ export function AuthAlternativeMethods() {
   const [email, setEmail] = useState("");
   const [feedback, setFeedback] = useState<{ type: "error" | "success"; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   async function signInWithProvider(provider: Provider) {
     setLoading(true);
@@ -21,7 +23,9 @@ export function AuthAlternativeMethods() {
       const supabase = createSupabaseBrowserClient();
 
       if (!supabase) {
-        setFeedback({ type: "error", message: "Supabase is not configured in this environment." });
+        const errorMessage = "Supabase is not configured in this environment.";
+        setFeedback({ type: "error", message: errorMessage });
+        toast({ title: errorMessage, variant: "error" });
         return;
       }
 
@@ -34,6 +38,7 @@ export function AuthAlternativeMethods() {
 
       if (error) {
         setFeedback({ type: "error", message: error.message });
+        toast({ title: error.message, variant: "error" });
       }
     } finally {
       setLoading(false);
@@ -49,7 +54,9 @@ export function AuthAlternativeMethods() {
       const supabase = createSupabaseBrowserClient();
 
       if (!supabase) {
-        setFeedback({ type: "error", message: "Supabase is not configured in this environment." });
+        const errorMessage = "Supabase is not configured in this environment.";
+        setFeedback({ type: "error", message: errorMessage });
+        toast({ title: errorMessage, variant: "error" });
         return;
       }
 
@@ -62,10 +69,13 @@ export function AuthAlternativeMethods() {
 
       if (error) {
         setFeedback({ type: "error", message: error.message });
+        toast({ title: error.message, variant: "error" });
         return;
       }
 
-      setFeedback({ type: "success", message: "Magic link sent. Check your inbox." });
+      const successMessage = "Magic link sent. Check your inbox.";
+      setFeedback({ type: "success", message: successMessage });
+      toast({ title: successMessage, variant: "success" });
     } finally {
       setLoading(false);
     }
@@ -87,8 +97,8 @@ export function AuthAlternativeMethods() {
           disabled={loading}
           className="w-full"
         >
-          <Globe className="h-4 w-4" />
-          Google
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+          {loading ? "Working..." : "Google"}
         </Button>
         <Button
           type="button"
@@ -97,8 +107,8 @@ export function AuthAlternativeMethods() {
           disabled={loading}
           className="w-full"
         >
-          <Github className="h-4 w-4" />
-          GitHub
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+          {loading ? "Working..." : "GitHub"}
         </Button>
       </div>
 
@@ -115,8 +125,8 @@ export function AuthAlternativeMethods() {
           required
         />
         <Button type="submit" variant="secondary" className="w-full" disabled={loading}>
-          <Mail className="h-4 w-4" />
-          Send magic link
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+          {loading ? "Sending..." : "Send magic link"}
         </Button>
       </form>
 

@@ -2,18 +2,21 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Globe2, Lock, ShoppingBag } from "lucide-react";
+import { Globe2, Loader2, Lock, ShoppingBag } from "lucide-react";
 import { type Card } from "@/lib/types";
 import { maskCardNumber } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card as SurfaceCard, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/toast-provider";
 
 export function CardControls({ cards }: { cards: Card[] }) {
   const router = useRouter();
   const [items, setItems] = useState(cards);
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   async function readJson<T>(response: Response): Promise<T | null> {
     const contentType = response.headers.get("content-type") ?? "";
@@ -30,28 +33,39 @@ export function CardControls({ cards }: { cards: Card[] }) {
 
   async function updateCard(cardId: string, patch: Partial<Card>) {
     setMessage("");
+    setUpdatingId(cardId);
 
-    const response = await fetch(`/api/cards/${cardId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
+    try {
+      const response = await fetch(`/api/cards/${cardId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
 
-    if (!response.ok) {
-      setMessage("Card update failed.");
-      return;
+      if (!response.ok) {
+        const errorMessage = "Card update failed.";
+        setMessage(errorMessage);
+        toast({ title: errorMessage, variant: "error" });
+        return;
+      }
+
+      const updatedCard = await readJson<Card>(response);
+
+      if (!updatedCard) {
+        const errorMessage = "Card update failed.";
+        setMessage(errorMessage);
+        toast({ title: errorMessage, variant: "error" });
+        return;
+      }
+
+      setItems((current) => current.map((item) => (item.id === cardId ? updatedCard : item)));
+      const successMessage = "Card controls updated.";
+      setMessage(successMessage);
+      toast({ title: successMessage, variant: "success" });
+      startTransition(() => router.refresh());
+    } finally {
+      setUpdatingId(null);
     }
-
-    const updatedCard = await readJson<Card>(response);
-
-    if (!updatedCard) {
-      setMessage("Card update failed.");
-      return;
-    }
-
-    setItems((current) => current.map((item) => (item.id === cardId ? updatedCard : item)));
-    setMessage("Card controls updated.");
-    startTransition(() => router.refresh());
   }
 
   return (
@@ -76,12 +90,14 @@ export function CardControls({ cards }: { cards: Card[] }) {
                   }),
                 )
               }
-              disabled={isPending}
+              disabled={isPending || updatingId === card.id}
             >
               <div className="mb-4 inline-flex rounded-2xl bg-accent p-3 text-accent-foreground">
-                <Lock className="h-4 w-4" />
+                {updatingId === card.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
               </div>
-              <p className="font-medium">{card.status === "active" ? "Freeze card" : "Unfreeze card"}</p>
+              <p className="font-medium">
+                {updatingId === card.id ? "Updating card..." : card.status === "active" ? "Freeze card" : "Unfreeze card"}
+              </p>
               <p className="mt-2 text-sm text-muted-foreground">Temporarily block card-present and online transactions.</p>
             </button>
 
@@ -103,7 +119,7 @@ export function CardControls({ cards }: { cards: Card[] }) {
                       }),
                     )
                   }
-                  disabled={isPending}
+                  disabled={isPending || updatingId === card.id}
                 />
               </div>
             </div>
@@ -126,7 +142,7 @@ export function CardControls({ cards }: { cards: Card[] }) {
                       }),
                     )
                   }
-                  disabled={isPending}
+                  disabled={isPending || updatingId === card.id}
                 />
               </div>
             </div>
